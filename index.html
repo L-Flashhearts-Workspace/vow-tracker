@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VOW Alliance — Weekly Tracker</title>
+<style>
+:root{
+  --bg:#12151c; --surface:#1a1e28; --surface2:#222736; --line:#2e3444;
+  --ink:#e7eaf0; --ink2:#9aa3b2; --ink3:#6b7383;
+  --accent:#5b8def; --accent-soft:rgba(91,141,239,.16);
+  --gold:#e5b84b; --warn:#e5b84b;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:14px 12px 40px}
+.wrap{max-width:1100px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:6px}
+h1{font-size:19px;font-weight:700;letter-spacing:.2px}
+h1 .tag{color:var(--accent)}
+.sub{color:var(--ink2);font-size:12px;margin-bottom:12px}
+.badge{display:inline-block;background:rgba(229,184,75,.15);color:var(--gold);border:1px solid rgba(229,184,75,.4);border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;letter-spacing:.5px;vertical-align:2px}
+.langs{display:flex;gap:6px}
+.langs button{background:var(--surface);border:1px solid var(--line);color:var(--ink2);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer}
+.langs button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0 14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px}
+.tile .k{color:var(--ink2);font-size:11px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.tile .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{background:var(--surface);border:1px solid var(--line);color:var(--ink2);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.pills button{background:var(--surface);border:1px solid var(--line);color:var(--ink2);border-radius:999px;padding:4px 12px;font-size:12px;cursor:pointer}
+.pills button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;border-bottom:1px solid var(--line);font-size:13px}
+th{color:var(--ink2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0;background:var(--surface2);z-index:2}
+td.name,th.name{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+th.name{background:var(--surface2);z-index:3}
+td.rank,th.rank{text-align:center;color:var(--ink2);position:sticky;left:0;background:var(--surface);width:38px;min-width:38px;z-index:1}
+th.rank{background:var(--surface2);z-index:3}
+td.rank + td.name, th.rank + th.name{left:38px}
+tr.dep td{color:var(--ink3)}
+tr.dep td.name{color:var(--ink3)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(91,141,239,.07)}
+tr:hover td.name, tr:hover td.rank{background:#212637}
+.bar{position:relative}
+.bar i{position:absolute;inset-inline-start:0;top:15%;height:70%;background:var(--accent-soft);border-radius:0 4px 4px 0;z-index:0}
+[dir=rtl] .bar i{border-radius:4px 0 0 4px}
+.bar b{position:relative;z-index:1;font-weight:600}
+.top3 td.rank{color:var(--gold);font-weight:700}
+.star{color:var(--gold)}
+.foot{color:var(--ink2);font-size:12px;margin-top:10px;line-height:1.6}
+.foot .star{margin-inline-end:2px}
+.zero{color:var(--ink3)}
+h2{font-size:15px;margin:16px 0 8px}
+[dir=rtl] th,[dir=rtl] td{text-align:left}
+[dir=rtl] td.name,[dir=rtl] th.name{text-align:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="tag">[VOW]</span> <span id="t-title"></span> <span class="badge" id="badge" style="display:none"></span></h1>
+    <div class="langs" id="langs"></div>
+  </header>
+  <div class="sub" id="t-sub"></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="tabs" id="tabs"></div>
+  <div id="view"></div>
+  <div class="foot" id="foot"></div>
+</div>
+<script>
+const DATA = {"generated": "2026-08-11", "weeks": ["2026-08-01", "2026-08-08"], "weekMeta": {"2026-08-01": {"season": "S4", "league": "2026-07-06 to 2026-08-02", "type": "Saving"}, "2026-08-08": {"season": "S4", "league": "2026-08-03 to 2026-08-30", "type": "Saving"}}, "latest": "2026-08-08", "players": [{"name": "Aukselis", "weeks": {"2026-08-01": {"w": 99213823, "s": 35926757, "d": 63287066}, "2026-08-08": {"w": 205745162, "s": 134810007, "d": 70935155}}, "joined": null, "departed": false}, {"name": "Mkvl", "weeks": {"2026-08-01": {"w": 78611453, "s": 17231390, "d": 61380063}, "2026-08-08": {"w": 84403048, "s": 3411071, "d": 80991977}}, "joined": null, "departed": false}, {"name": "gouwepik", "weeks": {"2026-08-01": {"w": 65291224, "s": 629756, "d": 64661468}}, "joined": null, "departed": true}, {"name": "乃ĦÇ", "weeks": {"2026-08-01": {"w": 86285250, "s": 21789652, "d": 64495598}, "2026-08-08": {"w": 93899340, "s": 21726554, "d": 72172786}}, "joined": null, "departed": false}, {"name": "Zillara", "weeks": {"2026-08-01": {"w": 68972380, "s": 10327240, "d": 58645140}, "2026-08-08": {"w": 48546482, "s": 5401435, "d": 43145047}}, "joined": null, "departed": false}, {"name": "爪毛刀刀丫", "weeks": {"2026-08-01": {"w": 68539948, "s": 15919317, "d": 52620631}, "2026-08-08": {"w": 54526203, "s": 5195299, "d": 49330904}}, "joined": null, "departed": false}, {"name": "Slay1209", "weeks": {"2026-08-01": {"w": 64916584, "s": 13674979, "d": 51241605}, "2026-08-08": {"w": 49096233, "s": 6712828, "d": 42383405}}, "joined": null, "departed": false}, {"name": "SAVaycay", "weeks": {"2026-08-01": {"w": 70571360, "s": 15560689, "d": 55010671}, "2026-08-08": {"w": 43636707, "s": 257737, "d": 43378970}}, "joined": null, "departed": false}, {"name": "Flummi16", "weeks": {"2026-08-01": {"w": 58448857, "s": 6563732, "d": 51885125}, "2026-08-08": {"w": 50209950, "s": 3792222, "d": 46417728}}, "joined": null, "departed": false}, {"name": "StombankS", "weeks": {"2026-08-01": {"w": 52437960, "s": 13044228, "d": 39393732}, "2026-08-08": {"w": 55264691, "s": 20831576, "d": 34433115}}, "joined": null, "departed": false}, {"name": "ErcuMaglor", "weeks": {"2026-08-01": {"w": 62421276, "s": 19644099, "d": 42777177}, "2026-08-08": {"w": 84933156, "s": 45904518, "d": 39028638}}, "joined": null, "departed": false}, {"name": "crazy bird", "weeks": {"2026-08-01": {"w": 52498884, "s": 17892314, "d": 34606570}, "2026-08-08": {"w": 36421724, "s": 1694249, "d": 34727475}}, "joined": null, "departed": false}, {"name": "TriVium13", "weeks": {"2026-08-01": {"w": 55286309, "s": 11196412, "d": 44089897}, "2026-08-08": {"w": 34158142, "s": 2695254, "d": 31462888}}, "joined": null, "departed": false}, {"name": "Ullatrulla", "weeks": {"2026-08-01": {"w": 49746493, "s": 4927808, "d": 44818685}, "2026-08-08": {"w": 49579682, "s": 3552724, "d": 46026958}}, "joined": null, "departed": false}, {"name": "KING James", "weeks": {"2026-08-01": {"w": 56596502, "s": 16409641, "d": 40186861}, "2026-08-08": {"w": 62316476, "s": 17742097, "d": 44574379}}, "joined": null, "departed": false}, {"name": "MASIUR", "weeks": {"2026-08-01": {"w": 48242913, "s": 3223377, "d": 45019536}, "2026-08-08": {"w": 50127608, "s": 4955704, "d": 45171904}}, "joined": null, "departed": false}, {"name": "Kraveen", "weeks": {"2026-08-01": {"w": 48392507, "s": 8943738, "d": 39448769}, "2026-08-08": {"w": 50906362, "s": 5561866, "d": 45344496}}, "joined": null, "departed": false}, {"name": "Highтowεr", "weeks": {"2026-08-01": {"w": 51642152, "s": 9544463, "d": 42097689}, "2026-08-08": {"w": 58523168, "s": 14790455, "d": 43732713}}, "joined": null, "departed": false}, {"name": "Sober T-Rex", "weeks": {"2026-08-01": {"w": 62478895, "s": 24338046, "d": 38140849}, "2026-08-08": {"w": 67038597, "s": 17698787, "d": 49339810}}, "joined": null, "departed": false}, {"name": "Ullitrulli", "weeks": {"2026-08-01": {"w": 49942936, "s": 7283259, "d": 42659677}, "2026-08-08": {"w": 45107724, "s": 3765083, "d": 41342641}}, "joined": null, "departed": false}, {"name": "Borgs1618", "weeks": {"2026-08-01": {"w": 43331175, "s": 638918, "d": 42692257}, "2026-08-08": {"w": 21634730, "s": 835016, "d": 20799714}}, "joined": null, "departed": false}, {"name": "h2m", "weeks": {"2026-08-01": {"w": 62896748, "s": 25878093, "d": 37018655}, "2026-08-08": {"w": 36748279, "s": 1483469, "d": 35264810}}, "joined": null, "departed": false}, {"name": "NooKK", "weeks": {"2026-08-01": {"w": 48974627, "s": 8450051, "d": 40524576}, "2026-08-08": {"w": 46841434, "s": 5643382, "d": 41198052}}, "joined": null, "departed": false}, {"name": "Vaycay", "weeks": {"2026-08-01": {"w": 48701845, "s": 7537748, "d": 41164097}, "2026-08-08": {"w": 34548418, "s": 784011, "d": 33764407}}, "joined": null, "departed": false}, {"name": "Fentom", "weeks": {"2026-08-01": {"w": 59621197, "s": 28351626, "d": 31269571}, "2026-08-08": {"w": 23824880, "s": 3466280, "d": 20358600}}, "joined": null, "departed": false}, {"name": "UfaLoops", "weeks": {"2026-08-01": {"w": 46741333, "s": 6486711, "d": 40254622}, "2026-08-08": {"w": 45245234, "s": 1949906, "d": 43295328}}, "joined": null, "departed": false}, {"name": "Billy-Bob", "weeks": {"2026-08-01": {"w": 51594134, "s": 11515783, "d": 40078351}, "2026-08-08": {"w": 42864495, "s": 4437093, "d": 38427402}}, "joined": null, "departed": false}, {"name": "Milessi", "weeks": {"2026-08-01": {"w": 43566512, "s": 3445007, "d": 40121505}, "2026-08-08": {"w": 48134544, "s": 7419636, "d": 40714908}}, "joined": null, "departed": false}, {"name": "ŁØWTECH", "weeks": {"2026-08-01": {"w": 55805136, "s": 18441259, "d": 37363877}, "2026-08-08": {"w": 46106840, "s": 4220008, "d": 41886832}}, "joined": null, "departed": false}, {"name": "Kitty Løtbrok", "weeks": {"2026-08-01": {"w": 43551523, "s": 3236524, "d": 40314999}, "2026-08-08": {"w": 26729843, "s": 3235274, "d": 23494569}}, "joined": null, "departed": false}, {"name": "ROCKETRaccoon", "weeks": {"2026-08-01": {"w": 55631133, "s": 15834067, "d": 39797066}, "2026-08-08": {"w": 56299783, "s": 25310095, "d": 30989688}}, "joined": null, "departed": false}, {"name": "PiPi躺神", "weeks": {"2026-08-01": {"w": 97522383, "s": 62502587, "d": 35019796}, "2026-08-08": {"w": 134536615, "s": 102433269, "d": 32103346}}, "joined": null, "departed": false}, {"name": "-Héraclès-", "weeks": {"2026-08-01": {"w": 44276831, "s": 5938750, "d": 38338081}, "2026-08-08": {"w": 67695071, "s": 25680604, "d": 42014467}}, "joined": null, "departed": false}, {"name": "Tropehj", "weeks": {"2026-08-01": {"w": 42013267, "s": 5904470, "d": 36108797}, "2026-08-08": {"w": 32723925, "s": 3209841, "d": 29514084}}, "joined": null, "departed": false}, {"name": "DROP BEAR 13", "weeks": {"2026-08-01": {"w": 42914507, "s": 9782134, "d": 33132373}, "2026-08-08": {"w": 41957519, "s": 5633085, "d": 36324434}}, "joined": null, "departed": false}, {"name": "Northlord", "weeks": {"2026-08-01": {"w": 43736502, "s": 5781448, "d": 37955054}, "2026-08-08": {"w": 15820862, "s": 923065, "d": 14897797}}, "joined": null, "departed": false}, {"name": "Dude696", "weeks": {"2026-08-01": {"w": 45643162, "s": 7841235, "d": 37801927}, "2026-08-08": {"w": 46598669, "s": 6719039, "d": 39879630}}, "joined": null, "departed": false}, {"name": "tei1", "weeks": {"2026-08-01": {"w": 48728065, "s": 11234235, "d": 37493830}, "2026-08-08": {"w": 39294640, "s": 7477056, "d": 31817584}}, "joined": null, "departed": false}, {"name": "Leviathan4649", "weeks": {"2026-08-01": {"w": 44968218, "s": 9458379, "d": 35509839}, "2026-08-08": {"w": 38899926, "s": 6142375, "d": 32757551}}, "joined": null, "departed": false}, {"name": "MC Hammer", "weeks": {"2026-08-01": {"w": 46673171, "s": 9958068, "d": 36715103}, "2026-08-08": {"w": 56061299, "s": 16097548, "d": 39963751}}, "joined": null, "departed": false}, {"name": "88oasis88", "weeks": {"2026-08-01": {"w": 42179595, "s": 5151258, "d": 37028337}, "2026-08-08": {"w": 25347614, "s": 3415719, "d": 21931895}}, "joined": null, "departed": false}, {"name": "TTTtttTTT", "weeks": {"2026-08-01": {"w": 39128110, "s": 5419885, "d": 33708225}, "2026-08-08": {"w": 36557849, "s": 4194453, "d": 32363396}}, "joined": null, "departed": false}, {"name": "TanZer0", "weeks": {"2026-08-01": {"w": 43682557, "s": 8840139, "d": 34842418}, "2026-08-08": {"w": 66203447, "s": 4377610, "d": 61825837}}, "joined": null, "departed": false}, {"name": "GREEK FREAK", "weeks": {"2026-08-01": {"w": 40922864, "s": 6178461, "d": 34744403}, "2026-08-08": {"w": 35972197, "s": 4228109, "d": 31744088}}, "joined": null, "departed": false}, {"name": "Καειαη", "weeks": {"2026-08-01": {"w": 39806424, "s": 4477427, "d": 35328997}, "2026-08-08": {"w": 37560104, "s": 4367985, "d": 33192119}}, "joined": null, "departed": false}, {"name": "suuuuuun", "weeks": {"2026-08-01": {"w": 45238997, "s": 12681669, "d": 32557328}, "2026-08-08": {"w": 47219681, "s": 14057525, "d": 33162156}}, "joined": null, "departed": false}, {"name": "Terryn", "weeks": {"2026-08-01": {"w": 42561109, "s": 9648292, "d": 32912817}, "2026-08-08": {"w": 46783201, "s": 2662635, "d": 44120566}}, "joined": null, "departed": false}, {"name": "Stuben", "weeks": {"2026-08-01": {"w": 34110672, "s": 1997690, "d": 32112982}, "2026-08-08": {"w": 42051379, "s": 13528438, "d": 28522941}}, "joined": null, "departed": false}, {"name": "Mandarino81", "weeks": {"2026-08-01": {"w": 39477138, "s": 6372413, "d": 33104725}, "2026-08-08": {"w": 38871183, "s": 5500367, "d": 33370816}}, "joined": null, "departed": false}, {"name": "L Flashheart IV", "weeks": {"2026-08-01": {"w": 44004314, "s": 12372333, "d": 31631981}, "2026-08-08": {"w": 44246484, "s": 3661595, "d": 40584889}}, "joined": null, "departed": false}, {"name": "AR1", "weeks": {"2026-08-01": {"w": 39694485, "s": 8679575, "d": 31014910}, "2026-08-08": {"w": 30728807, "s": 1384597, "d": 29344210}}, "joined": null, "departed": false}, {"name": "admin7", "weeks": {"2026-08-01": {"w": 31576175, "s": 3732959, "d": 27843216}, "2026-08-08": {"w": 31203513, "s": 957941, "d": 30245572}}, "joined": null, "departed": false}, {"name": "penu warrior", "weeks": {"2026-08-01": {"w": 35811716, "s": 4739700, "d": 31072016}, "2026-08-08": {"w": 39205760, "s": 5943200, "d": 33262560}}, "joined": null, "departed": false}, {"name": "Blacky Nanny", "weeks": {"2026-08-01": {"w": 34159930, "s": 3701134, "d": 30458796}, "2026-08-08": {"w": 45595699, "s": 3781032, "d": 41814667}}, "joined": null, "departed": false}, {"name": "MaugaUncleHorse", "weeks": {"2026-08-01": {"w": 69798115, "s": 38889171, "d": 30908944}, "2026-08-08": {"w": 85491644, "s": 44615557, "d": 40876087}}, "joined": null, "departed": false}, {"name": "Ragnarlotbrøk", "weeks": {"2026-08-01": {"w": 39858555, "s": 13051200, "d": 26807355}, "2026-08-08": {"w": 24698811, "s": 3355657, "d": 21343154}}, "joined": null, "departed": false}, {"name": "Pere castor", "weeks": {"2026-08-01": {"w": 30515014, "s": 4805732, "d": 25709282}, "2026-08-08": {"w": 17680038, "s": 1260799, "d": 16419239}}, "joined": null, "departed": false}, {"name": "Ashu2301", "weeks": {"2026-08-01": {"w": 31067002, "s": 729445, "d": 30337557}, "2026-08-08": {"w": 37825037, "s": 3359742, "d": 34465295}}, "joined": null, "departed": false}, {"name": "abdulakien", "weeks": {"2026-08-01": {"w": 39880571, "s": 9555063, "d": 30325508}, "2026-08-08": {"w": 39119899, "s": 3185869, "d": 35934030}}, "joined": null, "departed": false}, {"name": "BAVSM", "weeks": {"2026-08-01": {"w": 39479205, "s": 12536430, "d": 26942775}, "2026-08-08": {"w": 44136027, "s": 12244721, "d": 31891306}}, "joined": null, "departed": false}, {"name": "Ebyson", "weeks": {"2026-08-01": {"w": 30325211, "s": 1899765, "d": 28425446}, "2026-08-08": {"w": 40184608, "s": 1100197, "d": 39084411}}, "joined": null, "departed": false}, {"name": "Newcs", "weeks": {"2026-08-01": {"w": 36962308, "s": 7571832, "d": 29390476}, "2026-08-08": {"w": 32540628, "s": 4309783, "d": 28230845}}, "joined": null, "departed": false}, {"name": "Alta Balbi", "weeks": {"2026-08-01": {"w": 29893498, "s": 809536, "d": 29083962}, "2026-08-08": {"w": 27673994, "s": 6921549, "d": 20752445}}, "joined": null, "departed": false}, {"name": "-Radi-", "weeks": {"2026-08-01": {"w": 29240006, "s": 1618837, "d": 27621169}, "2026-08-08": {"w": 18974044, "s": 992280, "d": 17981764}}, "joined": null, "departed": false}, {"name": "Carabus", "weeks": {"2026-08-01": {"w": 67321293, "s": 39941132, "d": 27380161}, "2026-08-08": {"w": 44524756, "s": 12929651, "d": 31595105}}, "joined": null, "departed": false}, {"name": "FcBetze", "weeks": {"2026-08-01": {"w": 30708452, "s": 3783885, "d": 26924567}, "2026-08-08": {"w": 21870609, "s": 2227500, "d": 19643109}}, "joined": null, "departed": false}, {"name": "Ready player", "weeks": {"2026-08-01": {"w": 33900889, "s": 7879481, "d": 26021408}, "2026-08-08": {"w": 22759167, "s": 638166, "d": 22121001}}, "joined": null, "departed": false}, {"name": "Hoschi74", "weeks": {"2026-08-01": {"w": 25603075, "s": 513606, "d": 25089469}, "2026-08-08": {"w": 29888345, "s": 640542, "d": 29247803}}, "joined": null, "departed": false}, {"name": "AntoniusDaGreat", "weeks": {"2026-08-01": {"w": 27539915, "s": 5165565, "d": 22374350}, "2026-08-08": {"w": 29222489, "s": 2124151, "d": 27098338}}, "joined": null, "departed": false}, {"name": "Death Odin", "weeks": {"2026-08-01": {"w": 25201876, "s": 1828831, "d": 23373045}, "2026-08-08": {"w": 26753599, "s": 552036, "d": 26201563}}, "joined": null, "departed": false}, {"name": "X2RMoist", "weeks": {"2026-08-01": {"w": 27923537, "s": 4218423, "d": 23705114}, "2026-08-08": {"w": 35152487, "s": 3912678, "d": 31239809}}, "joined": null, "departed": false}, {"name": "FoxNoLaugh", "weeks": {"2026-08-01": {"w": 35206602, "s": 13448272, "d": 21758330}, "2026-08-08": {"w": 17154735, "s": 5690420, "d": 11464315}}, "joined": null, "departed": false}, {"name": "Clansman81", "weeks": {"2026-08-01": {"w": 23604062, "s": 264645, "d": 23339417}, "2026-08-08": {"w": 22890294, "s": 411947, "d": 22478347}}, "joined": null, "departed": false}, {"name": "BvB 1909", "weeks": {"2026-08-01": {"w": 25530650, "s": 2546481, "d": 22984169}, "2026-08-08": {"w": 13267375, "s": 666099, "d": 12601276}}, "joined": null, "departed": false}, {"name": "Balfor", "weeks": {"2026-08-01": {"w": 24465330, "s": 1609866, "d": 22855464}, "2026-08-08": {"w": 40304718, "s": 12400747, "d": 27903971}}, "joined": null, "departed": false}, {"name": "niavlys", "weeks": {"2026-08-01": {"w": 22503482, "s": 463035, "d": 22040447}, "2026-08-08": {"w": 21520707, "s": 903134, "d": 20617573}}, "joined": null, "departed": false}, {"name": "Ciccioriccio", "weeks": {"2026-08-01": {"w": 22437110, "s": 293404, "d": 22143706}, "2026-08-08": {"w": 20112889, "s": 540909, "d": 19571980}}, "joined": null, "departed": false}, {"name": "WeednCoffee", "weeks": {"2026-08-01": {"w": 22462300, "s": 924979, "d": 21537321}, "2026-08-08": {"w": 5173103, "s": 340124, "d": 4832979}}, "joined": null, "departed": false}, {"name": "myself70", "weeks": {"2026-08-01": {"w": 20327336, "s": 675473, "d": 19651863}, "2026-08-08": {"w": 20352285, "s": 1233453, "d": 19118832}}, "joined": null, "departed": false}, {"name": "First 9line", "weeks": {"2026-08-01": {"w": 20340835, "s": 581710, "d": 19759125}, "2026-08-08": {"w": 26071195, "s": 833885, "d": 25237310}}, "joined": null, "departed": false}, {"name": "Flizzy", "weeks": {"2026-08-01": {"w": 19436354, "s": 288282, "d": 19148072}, "2026-08-08": {"w": 27661123, "s": 50136, "d": 27610987}}, "joined": null, "departed": false}, {"name": "Ethereal Phate", "weeks": {"2026-08-01": {"w": 19778640, "s": 1191771, "d": 18586869}, "2026-08-08": {"w": 25080164, "s": 1379451, "d": 23700713}}, "joined": null, "departed": false}, {"name": "BloodLlama", "weeks": {"2026-08-01": {"w": 22820714, "s": 3923746, "d": 18896968}, "2026-08-08": {"w": 14710818, "s": 1644284, "d": 13066534}}, "joined": null, "departed": false}, {"name": "CindeR", "weeks": {"2026-08-01": {"w": 20837532, "s": 3854494, "d": 16983038}, "2026-08-08": {"w": 17698256, "s": 361103, "d": 17337153}}, "joined": null, "departed": false}, {"name": "megatrux", "weeks": {"2026-08-01": {"w": 17196944, "s": 2342913, "d": 14854031}, "2026-08-08": {"w": 22939691, "s": 1957954, "d": 20981737}}, "joined": null, "departed": false}, {"name": "Turbo-Chantalm", "weeks": {"2026-08-01": {"w": 15369540, "s": 4279868, "d": 11089672}, "2026-08-08": {"w": 12774154, "s": 1736560, "d": 11037594}}, "joined": null, "departed": false}, {"name": "TOMMY TI SCOPA", "weeks": {"2026-08-01": {"w": 15299391, "s": 980465, "d": 14318926}, "2026-08-08": {"w": 18261405, "s": 2070038, "d": 16191367}}, "joined": null, "departed": false}, {"name": "BrunoAB", "weeks": {"2026-08-01": {"w": 14548755, "s": 546411, "d": 14002344}, "2026-08-08": {"w": 23080965, "s": 1408743, "d": 21672222}}, "joined": null, "departed": false}, {"name": "Buibui", "weeks": {"2026-08-01": {"w": 13536410, "s": 492640, "d": 13043770}, "2026-08-08": {"w": 9222610, "s": 1232052, "d": 7990558}}, "joined": null, "departed": false}, {"name": "OldBlood", "weeks": {"2026-08-01": {"w": 13868878, "s": 837032, "d": 13031846}, "2026-08-08": {"w": 12836170, "s": 521675, "d": 12314495}}, "joined": null, "departed": false}, {"name": "Wyatt Herp", "weeks": {"2026-08-01": {"w": 12768982, "s": 249027, "d": 12519955}, "2026-08-08": {"w": 11610821, "s": 333441, "d": 11277380}}, "joined": null, "departed": false}, {"name": "Dadalorian1", "weeks": {"2026-08-01": {"w": 12014873, "s": 418789, "d": 11596084}, "2026-08-08": {"w": 8032961, "s": 1149411, "d": 6883550}}, "joined": null, "departed": false}, {"name": "i am GROOT", "weeks": {"2026-08-01": {"w": 11876470, "s": 7312175, "d": 4564295}, "2026-08-08": {"w": 21004067, "s": 7382153, "d": 13621914}}, "joined": null, "departed": false}, {"name": "Tetori", "weeks": {"2026-08-01": {"w": 10691864, "s": 2718519, "d": 7973345}, "2026-08-08": {"w": 28034824, "s": 1469207, "d": 26565617}}, "joined": null, "departed": false}, {"name": "Chitan", "weeks": {"2026-08-01": {"w": 10957054, "s": 2555115, "d": 8401939}}, "joined": null, "departed": true}, {"name": "Aparup", "weeks": {"2026-08-01": {"w": 5087123, "s": 5087123, "d": 0}, "2026-08-08": {"w": 15994261, "s": 875125, "d": 15119136}}, "joined": null, "departed": false}, {"name": "THE NEPHILIM", "weeks": {"2026-08-01": {"w": 585238, "s": 505977, "d": 79261}, "2026-08-08": {"w": 913991, "s": 146574, "d": 767417}}, "joined": null, "departed": false}, {"name": "Mastér Blue", "weeks": {"2026-08-01": {"w": 161750, "s": 161750, "d": 0}, "2026-08-08": {"w": 0, "s": 0, "d": 0}}, "joined": null, "departed": false}, {"name": "Boratman", "weeks": {"2026-08-01": {"w": 3364, "s": 3364, "d": 0}}, "joined": null, "departed": true}, {"name": "NeoGrimm", "weeks": {"2026-08-01": {"w": 0, "s": 0, "d": 0}, "2026-08-08": {"w": 188834013, "s": 146974214, "d": 41859799}}, "joined": "2026-08-02", "departed": false}, {"name": "QUEEN James", "weeks": {"2026-08-08": {"w": 1079117, "s": 1079117, "d": 0}}, "joined": "2026-08-08", "departed": false}], "leagues": ["2026-07-06 to 2026-08-02", "2026-08-03 to 2026-08-30"], "seasons": ["S4"], "events": [{"date": "2026-08-01", "name": "Volcano Event", "rows": [{"p": "PiPi躺神", "sc": 5234223, "n": null}, {"p": "MaugaUncleHorse", "sc": 4802008, "n": null}, {"p": "Carabus", "sc": 4020215, "n": null}, {"p": "Fentom", "sc": 2620519, "n": null}, {"p": "乃ĦÇ", "sc": 2546444, "n": null}, {"p": "Sober T-Rex", "sc": 2362843, "n": null}, {"p": "爪毛刀刀丫", "sc": 1742698, "n": null}, {"p": "ErcuMaglor", "sc": 1640217, "n": null}, {"p": "ŁØWTECH", "sc": 1608974, "n": null}, {"p": "ROCKETRaccoon", "sc": 1570237, "n": null}, {"p": "SAVaycay", "sc": 1351770, "n": null}, {"p": "gouwepik", "sc": 1331568, "n": null}, {"p": "L Flashheart IV", "sc": 1216407, "n": null}, {"p": "KING James", "sc": 1126694, "n": null}, {"p": "Mkvl", "sc": 1116011, "n": null}, {"p": "Zillara", "sc": 1022483, "n": null}, {"p": "TanZer0", "sc": 995349, "n": null}, {"p": "tei1", "sc": 974629, "n": null}, {"p": "Aukselis", "sc": 930964, "n": null}, {"p": "Billy-Bob", "sc": 922497, "n": null}, {"p": "abdulakien", "sc": 884989, "n": null}, {"p": "Ragnarlotbrøk", "sc": 882511, "n": null}, {"p": "h2m", "sc": 807278, "n": null}, {"p": "Leviathan4649", "sc": 786409, "n": null}, {"p": "Slay1209", "sc": 696729, "n": null}, {"p": "FoxNoLaugh", "sc": 624551, "n": null}, {"p": "Ready player", "sc": 601643, "n": null}, {"p": "TriVium13", "sc": 601160, "n": null}, {"p": "UfaLoops", "sc": 593184, "n": null}, {"p": "-Héraclès-", "sc": 585855, "n": null}, {"p": "AR1", "sc": 536575, "n": null}, {"p": "GREEK FREAK", "sc": 498250, "n": null}, {"p": "MC Hammer", "sc": 476645, "n": null}, {"p": "Terryn", "sc": 465797, "n": null}, {"p": "Newcs", "sc": 456877, "n": null}, {"p": "crazy bird", "sc": 438810, "n": null}, {"p": "Highтowεr", "sc": 418746, "n": null}, {"p": "Dude696", "sc": 416038, "n": null}, {"p": "Kraveen", "sc": 409219, "n": null}, {"p": "DROP BEAR 13", "sc": 404075, "n": null}, {"p": "FcBetze", "sc": 386701, "n": null}, {"p": "Mandarino81", "sc": 375229, "n": null}, {"p": "Flummi16", "sc": 367163, "n": null}, {"p": "BAVSM", "sc": 362452, "n": null}, {"p": "Καειαη", "sc": 360126, "n": null}, {"p": "Northlord", "sc": 331705, "n": null}, {"p": "Vaycay", "sc": 305727, "n": null}, {"p": "Kitty Løtbrok", "sc": 270106, "n": null}, {"p": "Tropehj", "sc": 247511, "n": null}, {"p": "Ullatrulla", "sc": 238593, "n": null}, {"p": "NooKK", "sc": 236490, "n": null}, {"p": "CindeR", "sc": 230861, "n": null}, {"p": "Ullitrulli", "sc": 211256, "n": null}, {"p": "penu warrior", "sc": 200484, "n": null}, {"p": "AntoniusDaGreat", "sc": 162090, "n": null}, {"p": "TTTtttTTT", "sc": 158711, "n": null}, {"p": "OldBlood", "sc": 128214, "n": null}, {"p": "megatrux", "sc": 50747, "n": null}, {"p": "Buibui", "sc": 2115, "n": null}, {"p": "StombankS", "sc": 0, "n": null}, {"p": "MASIUR", "sc": 0, "n": null}, {"p": "Borgs1618", "sc": 0, "n": null}, {"p": "Milessi", "sc": 0, "n": null}, {"p": "88oasis88", "sc": 0, "n": null}, {"p": "suuuuuun", "sc": 0, "n": null}, {"p": "Stuben", "sc": 0, "n": null}, {"p": "admin7", "sc": 0, "n": null}, {"p": "Blacky Nanny", "sc": 0, "n": null}, {"p": "Pere castor", "sc": 0, "n": null}, {"p": "Ashu2301", "sc": 0, "n": null}, {"p": "Ebyson", "sc": 0, "n": null}, {"p": "Alta Balbi", "sc": 0, "n": null}, {"p": "-Radi-", "sc": 0, "n": null}, {"p": "Hoschi74", "sc": 0, "n": null}, {"p": "Death Odin", "sc": 0, "n": null}, {"p": "X2RMoist", "sc": 0, "n": null}, {"p": "Clansman81", "sc": 0, "n": null}, {"p": "BvB 1909", "sc": 0, "n": null}, {"p": "Balfor", "sc": 0, "n": null}, {"p": "niavlys", "sc": 0, "n": null}, {"p": "Ciccioriccio", "sc": 0, "n": null}, {"p": "WeednCoffee", "sc": 0, "n": null}, {"p": "myself70", "sc": 0, "n": null}, {"p": "First 9line", "sc": 0, "n": null}, {"p": "Flizzy", "sc": 0, "n": null}, {"p": "Ethereal Phate", "sc": 0, "n": null}, {"p": "BloodLlama", "sc": 0, "n": null}, {"p": "Turbo-Chantalm", "sc": 0, "n": null}, {"p": "TOMMY TI SCOPA", "sc": 0, "n": null}, {"p": "BrunoAB", "sc": 0, "n": null}, {"p": "Wyatt Herp", "sc": 0, "n": null}, {"p": "Dadalorian1", "sc": 0, "n": null}, {"p": "i am GROOT", "sc": 0, "n": null}, {"p": "Tetori", "sc": 0, "n": null}, {"p": "Chitan", "sc": 0, "n": null}, {"p": "Aparup", "sc": 0, "n": null}, {"p": "THE NEPHILIM", "sc": 0, "n": null}, {"p": "Mastér Blue", "sc": 0, "n": null}, {"p": "Boratman", "sc": 0, "n": null}, {"p": "NeoGrimm", "sc": 0, "n": "* new joiner - joined after this event"}]}]};
+
+const L = {
+ en:{dir:'ltr',nf:'en-GB',title:'Alliance Weekly Tracker',sub:'Last Z alliance duel — ranked by Week − Saturday (points scored Mon–Fri + Sunday). Updated {date}.',
+  saving:'SAVING WEEK',savingLong:'Saving week: points are banked this week, so it is excluded from the “excl. saving” totals.',
+  latest:'Latest week',type:'Week type',tNormal:'Normal',tSaving:'Saving',playersN:'Players',allTotal:'Alliance weekly total',exclSat:'Total excl. Saturday',
+  tabs:['Overview','Leagues','Season','Events'],
+  rank:'#',player:'Player',weekly:'Weekly total',sat:'Saturday',wksat:'Week − Sat',
+  ptsAll:'Points (all weeks)',ptsExcl:'Points (excl. saving)',weeksRec:'Weeks',
+  evPts:'Event points',evScored:'Scored',evMissed:'Missed',evTotal:'Events',score:'Score',
+  joined:'joined w/e {date}',left:'left the alliance',snapshot:'left before the final capture — values are a mid-Saturday snapshot',
+  legend:'★ new joiner · greyed rows = departed players (history kept)',noData:'—'},
+ de:{dir:'ltr',nf:'de-DE',title:'Allianz-Wochentracker',sub:'Last Z Allianzduell — sortiert nach Woche − Samstag (Punkte Mo–Fr + Sonntag). Stand {date}.',
+  saving:'SPARWOCHE',savingLong:'Sparwoche: Punkte werden diese Woche angespart; sie zählt nicht zu den Summen „ohne Sparwochen“.',
+  latest:'Letzte Woche',type:'Wochentyp',tNormal:'Normal',tSaving:'Sparen',playersN:'Spieler',allTotal:'Allianz-Wochensumme',exclSat:'Summe ohne Samstag',
+  tabs:['Übersicht','Ligen','Saison','Events'],
+  rank:'#',player:'Spieler',weekly:'Wochensumme',sat:'Samstag',wksat:'Woche − Sa',
+  ptsAll:'Punkte (alle Wochen)',ptsExcl:'Punkte (ohne Sparwochen)',weeksRec:'Wochen',
+  evPts:'Event-Punkte',evScored:'Gewertet',evMissed:'Verpasst',evTotal:'Events',score:'Punkte',
+  joined:'beigetreten (Woche {date})',left:'hat die Allianz verlassen',snapshot:'vor der letzten Erfassung ausgetreten — Werte sind ein Samstag-Zwischenstand',
+  legend:'★ Neuzugang · graue Zeilen = ausgetretene Spieler (Historie bleibt)',noData:'—'},
+ fr:{dir:'ltr',nf:'fr-FR',title:'Suivi hebdo de l’alliance',sub:'Duel d’alliance Last Z — classé par Semaine − Samedi (points lun–ven + dimanche). Mis à jour le {date}.',
+  saving:'SEMAINE D’ÉCONOMIE',savingLong:'Semaine d’économie : les points sont mis de côté ; elle est exclue des totaux « hors économie ».',
+  latest:'Dernière semaine',type:'Type de semaine',tNormal:'Normale',tSaving:'Économie',playersN:'Joueurs',allTotal:'Total hebdo de l’alliance',exclSat:'Total hors samedi',
+  tabs:['Aperçu','Ligues','Saison','Événements'],
+  rank:'#',player:'Joueur',weekly:'Total hebdo',sat:'Samedi',wksat:'Semaine − Sam',
+  ptsAll:'Points (toutes semaines)',ptsExcl:'Points (hors économie)',weeksRec:'Semaines',
+  evPts:'Points d’événement',evScored:'Marqués',evMissed:'Manqués',evTotal:'Événements',score:'Score',
+  joined:'a rejoint (sem. du {date})',left:'a quitté l’alliance',snapshot:'parti avant la capture finale — valeurs d’un instantané de mi-samedi',
+  legend:'★ nouvelle recrue · lignes grisées = joueurs partis (historique conservé)',noData:'—'},
+ ar:{dir:'rtl',nf:'ar-u-nu-latn',title:'المتتبع الأسبوعي للتحالف',sub:'مبارزة تحالف Last Z — مرتّب حسب الأسبوع − السبت (نقاط الإثنين–الجمعة + الأحد). آخر تحديث {date}.',
+  saving:'أسبوع الادخار',savingLong:'أسبوع الادخار: تُدَّخر النقاط هذا الأسبوع، لذا يُستبعد من مجاميع «بدون الادخار».',
+  latest:'آخر أسبوع',type:'نوع الأسبوع',tNormal:'عادي',tSaving:'ادخار',playersN:'اللاعبون',allTotal:'إجمالي التحالف الأسبوعي',exclSat:'الإجمالي بدون السبت',
+  tabs:['نظرة عامة','الدوريات','الموسم','الفعاليات'],
+  rank:'#',player:'اللاعب',weekly:'الإجمالي الأسبوعي',sat:'السبت',wksat:'الأسبوع − السبت',
+  ptsAll:'النقاط (كل الأسابيع)',ptsExcl:'النقاط (بدون الادخار)',weeksRec:'الأسابيع',
+  evPts:'نقاط الفعاليات',evScored:'سجّل',evMissed:'فاته',evTotal:'الفعاليات',score:'النقاط',
+  joined:'انضم (أسبوع {date})',left:'غادر التحالف',snapshot:'غادر قبل الرصد النهائي — القيم لقطة من منتصف السبت',
+  legend:'★ منضم جديد · الصفوف الرمادية = لاعبون غادروا (يُحتفظ بسجلهم)',noData:'—'}
+};
+
+let state = {lang:'en', tab:0, league:DATA.leagues[DATA.leagues.length-1], event:0};
+const $ = id => document.getElementById(id);
+const t = () => L[state.lang];
+const fmt = n => n==null||n===''?t().noData:new Intl.NumberFormat(t().nf).format(n);
+const fdate = s => {
+  const d = new Date(s+'T00:00:00');
+  return new Intl.DateTimeFormat(t().nf==='ar-u-nu-latn'?'ar':t().nf,{day:'numeric',month:'short',year:'numeric'}).format(d);
+};
+const fdateShort = s => {
+  const d = new Date(s+'T00:00:00');
+  return new Intl.DateTimeFormat(t().nf==='ar-u-nu-latn'?'ar':t().nf,{day:'numeric',month:'short'}).format(d);
+};
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function currentRows(){
+  return DATA.players
+    .filter(p=>p.weeks[DATA.latest])
+    .map(p=>({...p, ...p.weeks[DATA.latest]}))
+    .sort((a,b)=>b.d-a.d);
+}
+function departedRows(){
+  return DATA.players.filter(p=>p.departed).map(p=>{
+    const last = DATA.weeks.filter(w=>p.weeks[w]).pop();
+    return {...p, last};
+  });
+}
+
+function render(){
+  const tr = t();
+  document.documentElement.lang = state.lang;
+  document.body.dir = tr.dir;
+  $('t-title').textContent = tr.title;
+  $('t-sub').textContent = tr.sub.replace('{date}', fdate(DATA.generated));
+  const meta = DATA.weekMeta[DATA.latest];
+  const b = $('badge');
+  if(meta.type==='Saving'){ b.style.display='inline-block'; b.textContent = tr.saving; } else b.style.display='none';
+
+  $('langs').innerHTML = Object.keys(L).map(k=>
+    `<button class="${k===state.lang?'on':''}" onclick="setLang('${k}')">${{en:'EN',de:'DE',fr:'FR',ar:'ع'}[k]}</button>`).join('');
+
+  const cur = currentRows();
+  const total = cur.reduce((s,p)=>s+p.w,0), totalD = cur.reduce((s,p)=>s+p.d,0);
+  $('tiles').innerHTML = [
+    [tr.latest, fdate(DATA.latest)],
+    [tr.type, meta.type==='Saving'?tr.tSaving:tr.tNormal],
+    [tr.playersN, fmt(cur.length)],
+    [tr.allTotal, fmt(total)],
+    [tr.exclSat, fmt(totalD)],
+  ].map(([k,v])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+
+  $('tabs').innerHTML = tr.tabs.map((n,i)=>
+    `<button class="${i===state.tab?'on':''}" onclick="setTab(${i})">${n}</button>`).join('');
+
+  const v = $('view');
+  if(state.tab===0) v.innerHTML = overviewHTML(cur);
+  else if(state.tab===1) v.innerHTML = leaguesHTML();
+  else if(state.tab===2) v.innerHTML = seasonHTML();
+  else v.innerHTML = eventsHTML();
+
+  let foot = tr.legend;
+  if(meta.type==='Saving') foot += '<br>' + tr.savingLong;
+  const deps = departedRows().map(p=>`${esc(p.name)} — ${p.name==='gouwepik'?tr.snapshot:tr.left}`);
+  const joins = DATA.players.filter(p=>p.joined).map(p=>`<span class="star">★</span>${esc(p.name)} — ${tr.joined.replace('{date}',fdateShort(p.joined))}`);
+  if(joins.length) foot += '<br>' + joins.join(' · ');
+  if(deps.length) foot += '<br>' + deps.join(' · ');
+  $('foot').innerHTML = foot;
+}
+
+function overviewHTML(cur){
+  const tr = t();
+  const max = Math.max(...cur.map(p=>p.d));
+  const hist = DATA.weeks;
+  let h = `<div class="tblwrap"><table><thead><tr>
+    <th class="rank">${tr.rank}</th><th class="name">${tr.player}</th>
+    <th>${tr.weekly}</th><th>${tr.sat}</th><th>${tr.wksat}</th>` +
+    hist.map(w=>`<th>${fdateShort(w)}</th>`).join('') + `</tr></thead><tbody>`;
+  cur.forEach((p,i)=>{
+    const pct = max? Math.max(2, p.d/max*100):0;
+    h += `<tr class="${i<3?'top3':''}"><td class="rank">${i+1}</td>
+      <td class="name">${esc(p.name)}${p.joined?' <span class="star">★</span>':''}</td>
+      <td>${fmt(p.w)}</td><td>${fmt(p.s)}</td>
+      <td class="bar"><i style="width:${pct}%"></i><b>${fmt(p.d)}</b></td>` +
+      hist.map(w=>{const c=p.weeks[w];return `<td class="${c?'':'zero'}">${c?fmt(c.d):tr.noData}</td>`;}).join('') + `</tr>`;
+  });
+  departedRows().forEach(p=>{
+    h += `<tr class="dep"><td class="rank">–</td><td class="name">${esc(p.name)}</td><td>${tr.noData}</td><td>${tr.noData}</td><td>${tr.noData}</td>` +
+      hist.map(w=>{const c=p.weeks[w];return `<td class="zero">${c?fmt(c.d):tr.noData}</td>`;}).join('') + `</tr>`;
+  });
+  return h + '</tbody></table></div>';
+}
+
+function agg(filterFn){
+  const m = {};
+  DATA.players.forEach(p=>{
+    Object.entries(p.weeks).forEach(([w,c])=>{
+      if(!filterFn(w)) return;
+      const e = m[p.name] = m[p.name]||{all:0,excl:0,n:0};
+      e.all += c.d; e.n += 1;
+      if(DATA.weekMeta[w].type==='Normal') e.excl += c.d;
+    });
+  });
+  return Object.entries(m).map(([name,e])=>({name,...e})).sort((a,b)=>b.all-a.all);
+}
+
+function sumTable(rows){
+  const tr = t();
+  let h = `<div class="tblwrap"><table><thead><tr>
+    <th class="rank">${tr.rank}</th><th class="name">${tr.player}</th>
+    <th>${tr.ptsAll}</th><th>${tr.ptsExcl}</th><th>${tr.weeksRec}</th></tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    h += `<tr class="${i<3?'top3':''}"><td class="rank">${i+1}</td><td class="name">${esc(r.name)}</td>
+      <td>${fmt(r.all)}</td><td class="${r.excl?'':'zero'}">${fmt(r.excl)}</td><td>${fmt(r.n)}</td></tr>`;
+  });
+  return h + '</tbody></table></div>';
+}
+
+function leaguesHTML(){
+  const pills = `<div class="pills">` + DATA.leagues.map(lg=>
+    `<button class="${lg===state.league?'on':''}" onclick="setLeague('${lg}')">${fdateShort(lg.slice(0,10))} → ${fdateShort(lg.slice(-10))}</button>`).join('') + `</div>`;
+  return pills + sumTable(agg(w=>DATA.weekMeta[w].league===state.league));
+}
+function seasonHTML(){
+  return sumTable(agg(()=>true));
+}
+function eventsHTML(){
+  const tr = t();
+  const ev = DATA.events[state.event];
+  const pills = `<div class="pills">` + DATA.events.map((e,i)=>
+    `<button class="${i===state.event?'on':''}" onclick="setEvent(${i})">${esc(e.name)} · ${fdateShort(e.date)}</button>`).join('') + `</div>`;
+  const rows = [...ev.rows].sort((a,b)=>b.sc-a.sc);
+  const max = Math.max(...rows.map(r=>r.sc));
+  let h = `<div class="tblwrap"><table><thead><tr>
+    <th class="rank">${tr.rank}</th><th class="name">${tr.player}</th><th>${tr.score}</th></tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    const pct = max&&r.sc? Math.max(2,r.sc/max*100):0;
+    h += `<tr class="${i<3&&r.sc?'top3':''} ${r.sc?'':'dep'}"><td class="rank">${r.sc?i+1:'–'}</td>
+      <td class="name">${esc(r.p)}${r.n?' <span class="star">★</span>':''}</td>
+      <td class="bar"><i style="width:${pct}%"></i><b>${r.sc?fmt(r.sc):tr.evMissed}</b></td></tr>`;
+  });
+  h += '</tbody></table></div>';
+  // per-player event summary
+  const m = {};
+  DATA.events.forEach(e=>e.rows.forEach(r=>{
+    const x = m[r.p] = m[r.p]||{pts:0,sc:0,ms:0,tot:0};
+    x.pts += r.sc; x.tot += 1; r.sc>0 ? x.sc++ : x.ms++;
+  }));
+  const srows = Object.entries(m).map(([name,x])=>({name,...x})).sort((a,b)=>b.pts-a.pts);
+  let h2 = `<h2>${tr.evPts}</h2><div class="tblwrap"><table><thead><tr>
+    <th class="rank">${tr.rank}</th><th class="name">${tr.player}</th>
+    <th>${tr.evPts}</th><th>${tr.evScored}</th><th>${tr.evMissed}</th><th>${tr.evTotal}</th></tr></thead><tbody>`;
+  srows.forEach((r,i)=>{
+    h2 += `<tr class="${i<3?'top3':''}"><td class="rank">${i+1}</td><td class="name">${esc(r.name)}</td>
+      <td>${fmt(r.pts)}</td><td>${fmt(r.sc)}</td><td class="${r.ms?'':'zero'}">${fmt(r.ms)}</td><td>${fmt(r.tot)}</td></tr>`;
+  });
+  return pills + h + h2 + '</tbody></table></div>';
+}
+
+function setLang(k){state.lang=k;render();}
+function setTab(i){state.tab=i;render();}
+function setLeague(lg){state.league=lg;render();}
+function setEvent(i){state.event=i;render();}
+render();
+</script>
+</body>
+</html>
